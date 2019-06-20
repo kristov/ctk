@@ -5,6 +5,13 @@
 #include <string.h>
 #include "ctk.h"
 
+#ifdef CTK_GPM
+int my_handler(Gpm_Event *event, void *data)
+{       printf("Event Type : %d at x=%d y=%d\n", event->type, event->x, event->y);
+        return 0;       
+}
+#endif
+
 enum {
     CTK_COLOR_WINDOW = 1,
     CTK_COLOR_MENU_BAR = 2,
@@ -305,6 +312,23 @@ uint8_t ctk_init_ctx(ctk_ctx_t* ctx, WINDOW* target) {
     wbkgd(ctx->win, COLOR_PAIR(CTK_COLOR_WINDOW));
     return 1;
 }
+
+#ifdef CTK_GPM
+uint8_t ctk_init_gpm(ctk_ctx_t* ctx) {
+    int c;
+    ctx->gpm.eventMask = ~0;
+    ctx->gpm.defaultMask = 0;
+    ctx->gpm.minMod = 0;
+    ctx->gpm.maxMod = ~0;
+        
+    if (Gpm_Open(&ctx->gpm, 0) == -1) {
+        printf("Cannot connect to mouse server\n");
+    }
+    gpm_handler = my_handler;
+    Gpm_Close();
+    return 0;
+}
+#endif
 
 uint8_t ctk_init_curses() {
     init_curses();

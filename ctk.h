@@ -3,6 +3,9 @@
 
 #include <ncurses.h>
 #include <stdint.h>
+#ifdef CTK_GPM
+#include <gpm.h>
+#endif
 
 typedef enum {
     CTK_WIDGET_WINDOW = 1,
@@ -34,6 +37,9 @@ typedef struct ctk_widget {
 
 typedef struct {
     WINDOW* win;
+#ifdef CTK_GPM
+    Gpm_Connect gpm;
+#endif
     ctk_widget_t mainwin;
 } ctk_ctx_t;
 
