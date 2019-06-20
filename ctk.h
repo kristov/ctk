@@ -7,6 +7,15 @@
 #include <gpm.h>
 #endif
 
+#define CTK_COLOR_WINDOW 0x01
+#define CTK_COLOR_MENU_BAR 0x02
+#define CTK_COLOR_MENU_HOTKEY 0x03
+#define CTK_COLOR_WARNING 0x04
+#define CTK_COLOR_HIGHLIGHT 0x05
+#define CTK_COLOR_SELECTED 0x06
+#define CTK_COLOR_OK 0x07
+#define CTK_COLOR_COOL 0x08
+
 typedef enum {
     CTK_WIDGET_WINDOW = 1,
     CTK_WIDGET_MENU_BAR = 2,

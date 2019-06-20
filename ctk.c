@@ -12,12 +12,6 @@ int my_handler(Gpm_Event *event, void *data)
 }
 #endif
 
-enum {
-    CTK_COLOR_WINDOW = 1,
-    CTK_COLOR_MENU_BAR = 2,
-    CTK_COLOR_MENU_HOTKEY = 3
-};
-
 #define BIT_TEST(a, f)   ((a >> f) & 1)
 #define BIT_SET(a, f)    (a |= (1 << f))
 #define BIT_UNSET(a, f)  (a &= ~(1 << f))
@@ -197,6 +191,11 @@ static void init_curses() {
         init_pair(CTK_COLOR_WINDOW, COLOR_WHITE, COLOR_BLACK);
         init_pair(CTK_COLOR_MENU_BAR, COLOR_WHITE, COLOR_BLUE);
         init_pair(CTK_COLOR_MENU_HOTKEY, COLOR_RED, COLOR_BLUE);
+        init_pair(CTK_COLOR_WARNING, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(CTK_COLOR_HIGHLIGHT, COLOR_MAGENTA, COLOR_BLACK);
+        init_pair(CTK_COLOR_SELECTED, COLOR_BLACK, COLOR_MAGENTA);
+        init_pair(CTK_COLOR_OK, COLOR_GREEN, COLOR_BLACK);
+        init_pair(CTK_COLOR_COOL, COLOR_BLUE, COLOR_BLACK);
     }
     keypad(stdscr, TRUE);
     noecho();
