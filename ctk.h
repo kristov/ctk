@@ -17,10 +17,13 @@
 #define CTK_COLOR_COOL 0x08
 
 typedef enum {
-    CTK_WIDGET_WINDOW = 1,
-    CTK_WIDGET_MENU_BAR = 2,
-    CTK_WIDGET_MENU = 3,
-    CTK_WIDGET_MENU_ITEM = 4
+    CTK_WIDGET_VOID = 1,
+    CTK_WIDGET_HBOX = 2,
+    CTK_WIDGET_VBOX = 3,
+    CTK_WIDGET_WINDOW = 4,
+    CTK_WIDGET_MENU_BAR = 5,
+    CTK_WIDGET_MENU = 6,
+    CTK_WIDGET_MENU_ITEM = 7
 } ctk_widget_type_t;
 
 typedef enum {
@@ -31,6 +34,7 @@ typedef enum {
 
 typedef struct ctk_widget ctk_widget_t;
 typedef struct ctk_widget {
+    WINDOW* win;
     ctk_widget_type_t type;
     uint16_t width;
     uint16_t height;
@@ -52,6 +56,8 @@ typedef struct {
     ctk_widget_t mainwin;
 } ctk_ctx_t;
 
+void ctk_addstr(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t color, char* string);
+
 uint8_t ctk_menu_item_init(ctk_widget_t* widget, char hotkey, char* label);
 
 uint8_t ctk_menu_init(ctk_widget_t* widget, char hotkey, char* label, ctk_widget_t* menu_items, uint16_t nr_menu_items);
@@ -60,7 +66,11 @@ uint8_t ctk_menu_bar_init(ctk_widget_t* widget, ctk_widget_t* menus, uint16_t nr
 
 uint8_t ctk_window_init(ctk_widget_t* widget, uint16_t width, uint16_t height, ctk_widget_t* children, uint16_t nr_children);
 
-uint8_t ctk_realize_widget(ctk_widget_t* widget);
+uint8_t ctk_void_init(ctk_widget_t* widget, uint16_t width, uint16_t height);
+
+uint8_t ctk_hbox_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
+
+uint8_t ctk_realize_widget(ctk_ctx_t* ctx, ctk_widget_t* widget);
 
 uint8_t ctk_draw_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y);
 
