@@ -16,123 +16,146 @@ int my_handler(Gpm_Event *event, void *data)
 #define BIT_SET(a, f)    (a |= (1 << f))
 #define BIT_UNSET(a, f)  (a &= ~(1 << f))
 
-//uint8_t count = 0;
-//mvprintw(10 + count++, 10, "%s [%dx%d]", widget->widget.menu_item.label, x, y);
+uint8_t count = 0;
+//mvwprintw(ctx->win, 10 + count++, 10, "%s [%dx%d]", widget->widget.menu_item.label, x, y);
 
-static uint8_t realize_widget_void(ctk_ctx_t* ctx, ctk_widget_t* widget) {
+static uint8_t p1_layout_widget(ctk_ctx_t* ctx, ctk_widget_t* widget);
+
+static uint8_t p1_layout_widget_void(ctk_ctx_t* ctx, ctk_widget_t* widget) {
     return 1;
 }
 
-static uint8_t realize_widget_hbox(ctk_ctx_t* ctx, ctk_widget_t* widget) {
-    uint16_t max_width = 0;
+static uint8_t p1_layout_widget_hbox(ctk_ctx_t* ctx, ctk_widget_t* widget, uint8_t padding) {
+    uint16_t min_width = 0;
+    uint16_t min_height = 0;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
-        widget->children[i].x = max_width;
-        widget->children[i].y = 0;
-        ctk_realize_widget(ctx, &widget->children[i]);
-        // Sum up the widths of all the menus
-        max_width += widget->children[i].width;
-    }
-    widget->width = max_width;
-    widget->height = 1;
-    if (widget->parent) {
-        // If we have a parent widget, expand to the full width
-        widget->width = widget->parent->width;
-        widget->x = widget->parent->x;
-        widget->y = widget->parent->y;
-    }
-    return 1;
-}
-
-static uint8_t realize_widget_vbox(ctk_ctx_t* ctx, ctk_widget_t* widget) {
-    uint16_t max_width = 0;
-    uint16_t y = 0;
-    for (uint16_t i = 0; i < widget->nr_children; i++) {
-        ctk_realize_widget(ctx, &widget->children[i]);
-        if (widget->children[i].width > max_width) {
-            max_width = widget->children[i].width;
+        p1_layout_widget(ctx, &widget->children[i]);
+        widget->children[i].x = min_width;
+        widget->children[i].width += padding;
+        min_width += widget->children[i].width;
+        if (widget->children[i].height > min_height) {
+            min_height = widget->children[i].height;
         }
-        widget->children[i].y = y;
-        y += widget->children[i].height;
     }
-    widget->width = max_width;
-    if (widget->parent) {
-        widget->width = widget->parent->width;
-        widget->x = widget->parent->x;
-        widget->y = widget->parent->y;
+    if (widget->width < min_width) {
+        widget->width = min_width;
+    }
+    if (widget->height > min_height) {
+        widget->height = min_height;
     }
     return 1;
 }
 
-static uint8_t realize_widget_window(ctk_ctx_t* ctx, ctk_widget_t* widget) {
-    uint16_t max_width = 0;
+static uint8_t p1_layout_widget_vbox(ctk_ctx_t* ctx, ctk_widget_t* widget) {
+    uint16_t min_width = 0;
+    uint16_t min_height = 0;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
-        widget->children[i].x = max_width;
-        widget->children[i].y = 0;
-        ctk_realize_widget(ctx, &widget->children[i]);
-        // Sum up the widths of all the menus
-        max_width += widget->children[i].width;
-    }
-    return 1;
-}
-
-static uint8_t realize_widget_menu(ctk_ctx_t* ctx, ctk_widget_t* widget) {
-    uint16_t max_width = 0;
-    int length = strlen(widget->label);
-    for (uint16_t i = 0; i < widget->nr_children; i++) {
-        ctk_realize_widget(ctx, &widget->children[i]);
-        if (widget->children[i].width > max_width) {
-            max_width = widget->children[i].width;
+        p1_layout_widget(ctx, &widget->children[i]);
+        widget->children[i].y = min_height;
+        min_height += widget->children[i].height;
+        if (widget->children[i].width > min_width) {
+            min_width = widget->children[i].width;
         }
-        widget->children[i].y = i + 1;
     }
-    if (length > max_width) {
-        max_width = length;
+    if (widget->width > min_width) {
+        widget->width = min_width;
     }
-    // Now we know the max width, go and make all the children this width.
+    if (widget->height < min_height) {
+        widget->height = min_height;
+    }
+    return 1;
+}
+
+static uint8_t p1_layout_widget_menu(ctk_ctx_t* ctx, ctk_widget_t* widget) {
+    uint16_t min_width = 0;
+    uint16_t min_height = 0;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
-        widget->children[i].width = max_width;
+        p1_layout_widget(ctx, &widget->children[i]);
+        widget->children[i].y = min_height;
+        min_height += widget->children[i].height;
+        if (widget->children[i].width > min_width) {
+            min_width = widget->children[i].width;
+        }
     }
-    widget->width = max_width;
+    for (uint16_t i = 0; i < widget->nr_children; i++) {
+        widget->children[i].width = min_width;
+    }
     return 1;
 }
 
-static uint8_t realize_widget_menu_item(ctk_ctx_t* ctx, ctk_widget_t* widget) {
-    int length = strlen(widget->label);
-    widget->width = length;
-    widget->height = 1;
-    widget->x = 0;
-    BIT_UNSET(widget->flags, CTK_FLAG_VISIBLE);
+static uint8_t p1_layout_widget_menu_item(ctk_ctx_t* ctx, ctk_widget_t* widget) {
     return 1;
 }
 
-uint8_t ctk_realize_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
-    BIT_SET(widget->flags, CTK_FLAG_VISIBLE);
+static uint8_t p1_layout_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
     widget->win = ctx->win;
     switch (widget->type) {
         case CTK_WIDGET_VOID:
-            return realize_widget_void(ctx, widget);
+            return p1_layout_widget_void(ctx, widget);
             break;
         case CTK_WIDGET_HBOX:
-            return realize_widget_hbox(ctx, widget);
+            return p1_layout_widget_hbox(ctx, widget, 0);
             break;
         case CTK_WIDGET_VBOX:
-            return realize_widget_vbox(ctx, widget);
+            return p1_layout_widget_vbox(ctx, widget);
             break;
         case CTK_WIDGET_WINDOW:
-            return realize_widget_window(ctx, widget);
+            return p1_layout_widget_vbox(ctx, widget);
             break;
         case CTK_WIDGET_MENU_BAR:
-            return realize_widget_hbox(ctx, widget);
+            return p1_layout_widget_hbox(ctx, widget, 1);
             break;
         case CTK_WIDGET_MENU:
-            return realize_widget_menu(ctx, widget);
+            return p1_layout_widget_menu(ctx, widget);
             break;
         case CTK_WIDGET_MENU_ITEM:
-            return realize_widget_menu_item(ctx, widget);
+            return p1_layout_widget_menu_item(ctx, widget);
             break;
         default:
-            return realize_widget_vbox(ctx, widget);
+            return p1_layout_widget_vbox(ctx, widget);
             break;
+    }
+    return 0;
+}
+
+static uint8_t p2_expand_widget(ctk_ctx_t* ctx, ctk_widget_t* widget);
+
+static uint8_t p2_expand_widget_x(ctk_ctx_t* ctx, ctk_widget_t* widget) {
+    uint16_t width = widget->width;
+    uint16_t child_width = 0;
+    uint16_t nr_expandable = 0;
+    for (uint16_t i = 0; i < widget->nr_children; i++) {
+        child_width += widget->children[i].width;
+        if (BIT_TEST(widget->children[i].flags, CTK_FLAG_EXPAND_X)) {
+            nr_expandable++;
+        }
+    }
+mvwprintw(ctx->win, 1 + count++, 100, "nr_expandable: %d", nr_expandable);
+    if (nr_expandable == 0) {
+        return 1;
+    }
+    if (width <= child_width) {
+        return 1;
+    }
+    uint16_t diff = width - child_width;
+    uint16_t space_per_child = diff / nr_expandable;
+mvwprintw(ctx->win, 1 + count++, 100, "diff: %d, space: %d", diff, space_per_child);
+    for (uint16_t i = 0; i < widget->nr_children; i++) {
+        if (BIT_TEST(widget->children[i].flags, CTK_FLAG_EXPAND_X)) {
+            widget->children[i].width += space_per_child;
+            p2_expand_widget(ctx, &widget->children[i]);
+        }
+    }
+
+    return 1;
+}
+
+static uint8_t p2_expand_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
+mvwprintw(ctx->win, 1 + count++, 100, "p2_expand_widget: %dx%d [%d]", widget->width, widget->height, widget->type);
+    if (BIT_TEST(widget->flags, CTK_FLAG_EXPAND_X)) {
+        p2_expand_widget_x(ctx, widget);
+    }
+    if (BIT_TEST(widget->flags, CTK_FLAG_EXPAND_Y)) {
     }
     return 0;
 }
@@ -290,7 +313,12 @@ static void zero_widget(ctk_widget_t* widget) {
 
 uint8_t ctk_menu_item_init(ctk_widget_t* widget, char hotkey, char* label) {
     zero_widget(widget);
+    BIT_UNSET(widget->flags, CTK_FLAG_VISIBLE);
+    BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
+    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_Y);
     widget->type = CTK_WIDGET_MENU_ITEM;
+    widget->width = strlen(label);
+    widget->height = 1;
     widget->label = label;
     widget->hotkey = hotkey;
     return 1;
@@ -298,7 +326,12 @@ uint8_t ctk_menu_item_init(ctk_widget_t* widget, char hotkey, char* label) {
 
 uint8_t ctk_menu_init(ctk_widget_t* widget, char hotkey, char* label, ctk_widget_t* menu_items, uint16_t nr_menu_items) {
     zero_widget(widget);
+    BIT_SET(widget->flags, CTK_FLAG_VISIBLE);
+    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_X);
+    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_Y);
     widget->type = CTK_WIDGET_MENU;
+    widget->width = strlen(label);
+    widget->height = 1;
     widget->label = label;
     widget->hotkey = hotkey;
     widget->children = menu_items;
@@ -311,7 +344,12 @@ uint8_t ctk_menu_init(ctk_widget_t* widget, char hotkey, char* label, ctk_widget
 
 uint8_t ctk_menu_bar_init(ctk_widget_t* widget, ctk_widget_t* menus, uint16_t nr_menus) {
     zero_widget(widget);
+    BIT_SET(widget->flags, CTK_FLAG_VISIBLE);
+    BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
+    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_Y);
     widget->type = CTK_WIDGET_MENU_BAR;
+    widget->width = 0;
+    widget->height = 1;
     widget->children = menus;
     widget->nr_children = nr_menus;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
@@ -323,6 +361,9 @@ uint8_t ctk_menu_bar_init(ctk_widget_t* widget, ctk_widget_t* menus, uint16_t nr
 uint8_t ctk_window_init(ctk_widget_t* widget, uint16_t width, uint16_t height, ctk_widget_t* children, uint16_t nr_children) {
     zero_widget(widget);
     widget->type = CTK_WIDGET_WINDOW;
+    BIT_SET(widget->flags, CTK_FLAG_VISIBLE);
+    BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
+    BIT_SET(widget->flags, CTK_FLAG_EXPAND_Y);
     widget->width = width;
     widget->height = height;
     widget->nr_children = nr_children;
@@ -336,6 +377,9 @@ uint8_t ctk_window_init(ctk_widget_t* widget, uint16_t width, uint16_t height, c
 uint8_t ctk_void_init(ctk_widget_t* widget, uint16_t width, uint16_t height) {
     zero_widget(widget);
     widget->type = CTK_WIDGET_VOID;
+    BIT_UNSET(widget->flags, CTK_FLAG_VISIBLE);
+    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_X);
+    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_Y);
     widget->width = width;
     widget->height = height;
     return 1;
@@ -344,6 +388,9 @@ uint8_t ctk_void_init(ctk_widget_t* widget, uint16_t width, uint16_t height) {
 uint8_t ctk_hbox_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children) {
     zero_widget(widget);
     widget->type = CTK_WIDGET_HBOX;
+    BIT_UNSET(widget->flags, CTK_FLAG_VISIBLE);
+    BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
+    BIT_SET(widget->flags, CTK_FLAG_EXPAND_Y);
     widget->nr_children = nr_children;
     widget->children = children;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
@@ -365,7 +412,10 @@ uint8_t ctk_init_widgets(ctk_ctx_t* ctx, ctk_widget_t* widgets, uint16_t nr_widg
     int x, y;
     getmaxyx(ctx->win, y, x);
     ctk_window_init(&ctx->mainwin, x, y, widgets, nr_widgets);
-    ctk_realize_widget(ctx, &ctx->mainwin);
+    p1_layout_widget(ctx, &ctx->mainwin);
+    ctx->mainwin.width = x;
+    ctx->mainwin.height = y;
+    p2_expand_widget(ctx, &ctx->mainwin);
     return 1;
 }
 

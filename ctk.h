@@ -29,7 +29,9 @@ typedef enum {
 typedef enum {
     CTK_FLAG_ENABLED = 1,
     CTK_FLAG_SELECTED = 2,
-    CTK_FLAG_VISIBLE = 3
+    CTK_FLAG_VISIBLE = 3,
+    CTK_FLAG_EXPAND_X = 4,
+    CTK_FLAG_EXPAND_Y = 5
 } ctk_flag_t;
 
 typedef struct ctk_widget ctk_widget_t;
