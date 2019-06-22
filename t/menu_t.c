@@ -1,4 +1,4 @@
-#include "ctk.h"
+#include "../ctk.h"
 
 void sub_window(ctk_ctx_t* ctx, ctk_widget_t* main) {
     ctk_init_curses();

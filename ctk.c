@@ -130,7 +130,6 @@ static uint8_t p2_expand_widget_x(ctk_ctx_t* ctx, ctk_widget_t* widget) {
             nr_expandable++;
         }
     }
-mvwprintw(ctx->win, 1 + count++, 100, "nr_expandable: %d", nr_expandable);
     if (nr_expandable == 0) {
         return 1;
     }
@@ -139,7 +138,6 @@ mvwprintw(ctx->win, 1 + count++, 100, "nr_expandable: %d", nr_expandable);
     }
     uint16_t diff = width - child_width;
     uint16_t space_per_child = diff / nr_expandable;
-mvwprintw(ctx->win, 1 + count++, 100, "diff: %d, space: %d", diff, space_per_child);
     for (uint16_t i = 0; i < widget->nr_children; i++) {
         if (BIT_TEST(widget->children[i].flags, CTK_FLAG_EXPAND_X)) {
             widget->children[i].width += space_per_child;
@@ -150,12 +148,40 @@ mvwprintw(ctx->win, 1 + count++, 100, "diff: %d, space: %d", diff, space_per_chi
     return 1;
 }
 
+static uint8_t p2_expand_widget_y(ctk_ctx_t* ctx, ctk_widget_t* widget) {
+    uint16_t height = widget->height;
+    uint16_t child_height = 0;
+    uint16_t nr_expandable = 0;
+    for (uint16_t i = 0; i < widget->nr_children; i++) {
+        child_height += widget->children[i].height;
+        if (BIT_TEST(widget->children[i].flags, CTK_FLAG_EXPAND_Y)) {
+            nr_expandable++;
+        }
+    }
+    if (nr_expandable == 0) {
+        return 1;
+    }
+    if (height <= child_height) {
+        return 1;
+    }
+    uint16_t diff = height - child_height;
+    uint16_t space_per_child = diff / nr_expandable;
+    for (uint16_t i = 0; i < widget->nr_children; i++) {
+        if (BIT_TEST(widget->children[i].flags, CTK_FLAG_EXPAND_Y)) {
+            widget->children[i].height += space_per_child;
+            p2_expand_widget(ctx, &widget->children[i]);
+        }
+    }
+
+    return 1;
+}
+
 static uint8_t p2_expand_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
-mvwprintw(ctx->win, 1 + count++, 100, "p2_expand_widget: %dx%d [%d]", widget->width, widget->height, widget->type);
     if (BIT_TEST(widget->flags, CTK_FLAG_EXPAND_X)) {
         p2_expand_widget_x(ctx, widget);
     }
     if (BIT_TEST(widget->flags, CTK_FLAG_EXPAND_Y)) {
+        p2_expand_widget_y(ctx, widget);
     }
     return 0;
 }
@@ -358,14 +384,12 @@ uint8_t ctk_menu_bar_init(ctk_widget_t* widget, ctk_widget_t* menus, uint16_t nr
     return 1;
 }
 
-uint8_t ctk_window_init(ctk_widget_t* widget, uint16_t width, uint16_t height, ctk_widget_t* children, uint16_t nr_children) {
+uint8_t ctk_window_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children) {
     zero_widget(widget);
     widget->type = CTK_WIDGET_WINDOW;
     BIT_SET(widget->flags, CTK_FLAG_VISIBLE);
     BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
     BIT_SET(widget->flags, CTK_FLAG_EXPAND_Y);
-    widget->width = width;
-    widget->height = height;
     widget->nr_children = nr_children;
     widget->children = children;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
@@ -411,7 +435,7 @@ static void trigger_hotkey(ctk_ctx_t* ctx, ctk_widget_t* widget, char hotkey) {
 uint8_t ctk_init_widgets(ctk_ctx_t* ctx, ctk_widget_t* widgets, uint16_t nr_widgets) {
     int x, y;
     getmaxyx(ctx->win, y, x);
-    ctk_window_init(&ctx->mainwin, x, y, widgets, nr_widgets);
+    ctk_window_init(&ctx->mainwin, widgets, nr_widgets);
     p1_layout_widget(ctx, &ctx->mainwin);
     ctx->mainwin.width = x;
     ctx->mainwin.height = y;

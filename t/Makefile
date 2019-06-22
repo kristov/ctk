@@ -1,0 +1,16 @@
+CC := gcc
+CFLAGS := -Wall -Werror -ggdb
+
+LDFLAGS=-lncursesw
+
+TESTS =
+TESTS += menu_t
+TESTS += hbox_t
+
+all: $(TESTS)
+
+%: %.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ ../ctk.o $<
+
+clean:
+	rm -f $(TESTS)

@@ -66,7 +66,7 @@ uint8_t ctk_menu_init(ctk_widget_t* widget, char hotkey, char* label, ctk_widget
 
 uint8_t ctk_menu_bar_init(ctk_widget_t* widget, ctk_widget_t* menus, uint16_t nr_menus);
 
-uint8_t ctk_window_init(ctk_widget_t* widget, uint16_t width, uint16_t height, ctk_widget_t* children, uint16_t nr_children);
+uint8_t ctk_window_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
 
 uint8_t ctk_void_init(ctk_widget_t* widget, uint16_t width, uint16_t height);
 
