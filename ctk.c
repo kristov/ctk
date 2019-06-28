@@ -5,13 +5,6 @@
 #include <string.h>
 #include "ctk.h"
 
-#ifdef CTK_GPM
-int my_handler(Gpm_Event *event, void *data)
-{       printf("Event Type : %d at x=%d y=%d\n", event->type, event->x, event->y);
-        return 0;       
-}
-#endif
-
 #define BIT_TEST(a, f)   ((a >> f) & 1)
 #define BIT_SET(a, f)    (a |= (1 << f))
 #define BIT_UNSET(a, f)  (a &= ~(1 << f))
@@ -295,6 +288,7 @@ static void init_curses() {
     cbreak();
     timeout(1000);
     curs_set(FALSE);
+    mousemask(ALL_MOUSE_EVENTS, NULL);
 }
 
 static void cleanup() {
@@ -423,9 +417,37 @@ uint8_t ctk_hbox_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_
     return 1;
 }
 
+static uint8_t handle_event_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t px, uint16_t py, uint16_t x, uint16_t y) {
+    px += widget->x;
+    py += widget->y;
+    uint8_t handled = 0;
+    for (uint16_t i = 0; i < widget->nr_children; i++) {
+        handled = handle_event_widget(ctx, &widget->children[i], px, py, x, y);
+        if (handled) {
+            break;
+        }
+    }
+    if (handled) {
+        return 1;
+    }
+    if ((x >= px) && (x <= px + widget->width) && (y >= py) && (y <= py + widget->height)) {
+        if (widget->event_callback) {
+            ctk_event_t event;
+            event.x = px - x;
+            event.y = py - y;
+            event.type = 1;
+            return widget->event_callback(widget, &event, widget->user_data);
+        }
+    }
+    return 0;
+}
+
+static void handle_event(ctk_ctx_t* ctx, uint16_t x, uint16_t y) {
+    handle_event_widget(ctx, &ctx->mainwin, 0, 0, x, y);
+}
+
 static void trigger_hotkey(ctk_ctx_t* ctx, ctk_widget_t* widget, char hotkey) {
     if (widget->hotkey == hotkey) {
-        //mvwprintw(ctx->win, 11, 10, "%c", hotkey);
     }
     for (uint16_t i = 0; i < widget->nr_children; i++) {
         trigger_hotkey(ctx, &widget->children[i], hotkey);
@@ -449,23 +471,6 @@ uint8_t ctk_init_ctx(ctk_ctx_t* ctx, WINDOW* target) {
     return 1;
 }
 
-#ifdef CTK_GPM
-uint8_t ctk_init_gpm(ctk_ctx_t* ctx) {
-    int c;
-    ctx->gpm.eventMask = ~0;
-    ctx->gpm.defaultMask = 0;
-    ctx->gpm.minMod = 0;
-    ctx->gpm.maxMod = ~0;
-        
-    if (Gpm_Open(&ctx->gpm, 0) == -1) {
-        printf("Cannot connect to mouse server\n");
-    }
-    gpm_handler = my_handler;
-    Gpm_Close();
-    return 0;
-}
-#endif
-
 uint8_t ctk_init_curses() {
     init_curses();
     install_signal_handlers();
@@ -481,6 +486,7 @@ uint8_t ctk_init(ctk_ctx_t* ctx, ctk_widget_t* widgets, uint16_t nr_widgets) {
 
 uint8_t ctk_main_loop(ctk_ctx_t* ctx) {
     int c;
+    MEVENT event;
     refresh_view(ctx);
     while (1) {
         c = getch();
@@ -492,6 +498,11 @@ uint8_t ctk_main_loop(ctk_ctx_t* ctx) {
             case 6:
                 trigger_hotkey(ctx, &ctx->mainwin, 'F');
                 refresh_view(ctx);
+                break;
+            case KEY_MOUSE:
+                if (getmouse(&event) == OK) {
+                    handle_event(ctx, event.x, event.y);
+                }
                 break;
             default:
                 break;
@@ -505,4 +516,5 @@ uint8_t ctk_main_loop(ctk_ctx_t* ctx) {
 void ctk_end(ctk_ctx_t* ctx) {
     cleanup();
     endwin();
+    //Gpm_Close();
 }

@@ -31,10 +31,14 @@ typedef enum {
     CTK_FLAG_SELECTED = 2,
     CTK_FLAG_VISIBLE = 3,
     CTK_FLAG_EXPAND_X = 4,
-    CTK_FLAG_EXPAND_Y = 5
+    CTK_FLAG_EXPAND_Y = 5,
+    CTK_FLAG_ACTIVE = 6
 } ctk_flag_t;
 
 typedef struct ctk_widget ctk_widget_t;
+typedef struct ctk_event ctk_event_t;
+typedef uint8_t (*ctk_event_callback_t)(ctk_widget_t* widget, ctk_event_t* event, void* user_data);
+
 typedef struct ctk_widget {
     WINDOW* win;
     ctk_widget_type_t type;
@@ -48,13 +52,18 @@ typedef struct ctk_widget {
     uint16_t nr_children;
     ctk_widget_t* children;
     ctk_widget_t* parent;
+    ctk_event_callback_t event_callback;
+    void* user_data;
 } ctk_widget_t;
+
+typedef struct ctk_event {
+    uint8_t type;
+    uint16_t x;
+    uint16_t y;
+} ctk_event_t;
 
 typedef struct {
     WINDOW* win;
-#ifdef CTK_GPM
-    Gpm_Connect gpm;
-#endif
     ctk_widget_t mainwin;
 } ctk_ctx_t;
 

@@ -7,7 +7,7 @@ TESTS =
 TESTS += menu_t
 TESTS += hbox_t
 
-all: $(TESTS)
+all: $(TESTS) ../ctk.o
 
 %: %.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ ../ctk.o $<

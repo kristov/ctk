@@ -9,3 +9,4 @@ tests: ctk.o
 
 clean:
 	rm -f ctk.o
+	cd t/ && make clean
