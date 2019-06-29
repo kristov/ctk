@@ -6,6 +6,7 @@ LDFLAGS=-lncursesw
 TESTS =
 TESTS += menu_t
 TESTS += hbox_t
+TESTS += subwin_t
 
 all: $(TESTS) ../ctk.o
 

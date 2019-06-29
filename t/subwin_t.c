@@ -23,7 +23,10 @@ int main(int argc, char** argv) {
     ctk_menu_init(&menus[2], 'H', "Help", &help_menu_items[0], 2);
     ctk_menu_bar_init(&menu_bar, &menus[0], 3);
 
-    ctk_init(&ctx, &menu_bar, 1);
+    ctk_init_curses();
+    WINDOW* window = newwin(20, 40, 5, 5);
+    ctk_init_ctx(&ctx, window);
+    ctk_init_widgets(&ctx, &menu_bar, 1);
     ctk_main_loop(&ctx);
     ctk_end(&ctx);
 

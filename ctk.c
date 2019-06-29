@@ -180,9 +180,6 @@ static uint8_t p2_expand_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
 }
 
 static uint8_t draw_widget_menu_item(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y) {
-    if (!BIT_TEST(widget->flags, CTK_FLAG_VISIBLE)) {
-        return 0;
-    }
     x += widget->x;
     y += widget->y;
     wattron(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_BAR));
@@ -210,6 +207,9 @@ static uint8_t draw_widget_menu(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x
     wattron(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_HOTKEY));
     mvwprintw(ctx->win, y, x, "%c", widget->hotkey);
     wattroff(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_HOTKEY));
+    if (!BIT_TEST(widget->flags, CTK_FLAG_ACTIVE)) {
+        return 1;
+    }
     for (uint16_t i = 0; i < widget->nr_children; i++) {
         ctk_draw_widget(ctx, &widget->children[i], x, y);
     }
@@ -299,6 +299,7 @@ static void cleanup() {
 //}
 
 static void refresh_view(ctk_ctx_t* ctx) {
+    wclear(ctx->win);
     ctk_draw_widget(ctx, &ctx->mainwin, 0, 0);
     refresh();
     wrefresh(ctx->win);
@@ -331,9 +332,23 @@ static void zero_widget(ctk_widget_t* widget) {
     memset(widget, 0, sizeof(ctk_widget_t));
 }
 
+void ctk_deactivate_all(ctk_widget_t* widget) {
+    for (uint16_t i = 0; i < widget->nr_children; i++) {
+        BIT_UNSET(widget->children[i].flags, CTK_FLAG_ACTIVE);
+    }
+}
+
+static uint8_t default_menu_handler(ctk_event_t* event, void* user_data) {
+    mvwprintw(event->widget->win, 10, 10, "click");
+    ctk_deactivate_all(event->widget->parent);
+    BIT_SET(event->widget->flags, CTK_FLAG_ACTIVE);
+    event->ctx->redraw = 1;
+    return 1;
+}
+
 uint8_t ctk_menu_item_init(ctk_widget_t* widget, char hotkey, char* label) {
     zero_widget(widget);
-    BIT_UNSET(widget->flags, CTK_FLAG_VISIBLE);
+    BIT_UNSET(widget->flags, CTK_FLAG_ACTIVE);
     BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
     BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_Y);
     widget->type = CTK_WIDGET_MENU_ITEM;
@@ -347,6 +362,7 @@ uint8_t ctk_menu_item_init(ctk_widget_t* widget, char hotkey, char* label) {
 uint8_t ctk_menu_init(ctk_widget_t* widget, char hotkey, char* label, ctk_widget_t* menu_items, uint16_t nr_menu_items) {
     zero_widget(widget);
     BIT_SET(widget->flags, CTK_FLAG_VISIBLE);
+    BIT_UNSET(widget->flags, CTK_FLAG_ACTIVE);
     BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_X);
     BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_Y);
     widget->type = CTK_WIDGET_MENU;
@@ -356,6 +372,7 @@ uint8_t ctk_menu_init(ctk_widget_t* widget, char hotkey, char* label, ctk_widget
     widget->hotkey = hotkey;
     widget->children = menu_items;
     widget->nr_children = nr_menu_items;
+    widget->event_callback = default_menu_handler;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
         widget->children[i].parent = widget;
     }
@@ -436,7 +453,9 @@ static uint8_t handle_event_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_
             event.x = px - x;
             event.y = py - y;
             event.type = 1;
-            return widget->event_callback(widget, &event, widget->user_data);
+            event.ctx = ctx;
+            event.widget = widget;
+            return widget->event_callback(&event, widget->user_data);
         }
     }
     return 0;
@@ -468,6 +487,7 @@ uint8_t ctk_init_widgets(ctk_ctx_t* ctx, ctk_widget_t* widgets, uint16_t nr_widg
 uint8_t ctk_init_ctx(ctk_ctx_t* ctx, WINDOW* target) {
     ctx->win = target;
     wbkgd(ctx->win, COLOR_PAIR(CTK_COLOR_WINDOW));
+    ctx->redraw = 1;
     return 1;
 }
 
@@ -490,14 +510,13 @@ uint8_t ctk_main_loop(ctk_ctx_t* ctx) {
     refresh_view(ctx);
     while (1) {
         c = getch();
-        mvwprintw(ctx->win, 10, 10, "%s %d", keyname(c), c);
+        //mvwprintw(ctx->win, 10, 10, "%s %d", keyname(c), c);
         if (ERR == c) {
             continue;
         }
         switch (c) {
             case 6:
                 trigger_hotkey(ctx, &ctx->mainwin, 'F');
-                refresh_view(ctx);
                 break;
             case KEY_MOUSE:
                 if (getmouse(&event) == OK) {
@@ -506,6 +525,10 @@ uint8_t ctk_main_loop(ctk_ctx_t* ctx) {
                 break;
             default:
                 break;
+        }
+        if (ctx->redraw) {
+            refresh_view(ctx);
+            ctx->redraw = 0;
         }
     }
 }

@@ -37,7 +37,7 @@ typedef enum {
 
 typedef struct ctk_widget ctk_widget_t;
 typedef struct ctk_event ctk_event_t;
-typedef uint8_t (*ctk_event_callback_t)(ctk_widget_t* widget, ctk_event_t* event, void* user_data);
+typedef uint8_t (*ctk_event_callback_t)(ctk_event_t* event, void* user_data);
 
 typedef struct ctk_widget {
     WINDOW* win;
@@ -56,16 +56,19 @@ typedef struct ctk_widget {
     void* user_data;
 } ctk_widget_t;
 
+typedef struct {
+    WINDOW* win;
+    ctk_widget_t mainwin;
+    uint8_t redraw;
+} ctk_ctx_t;
+
 typedef struct ctk_event {
+    ctk_ctx_t* ctx;
+    ctk_widget_t* widget;
     uint8_t type;
     uint16_t x;
     uint16_t y;
 } ctk_event_t;
-
-typedef struct {
-    WINDOW* win;
-    ctk_widget_t mainwin;
-} ctk_ctx_t;
 
 void ctk_addstr(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t color, char* string);
 
