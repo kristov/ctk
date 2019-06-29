@@ -8,6 +8,7 @@
 #define BIT_TEST(a, f)   ((a >> f) & 1)
 #define BIT_SET(a, f)    (a |= (1 << f))
 #define BIT_UNSET(a, f)  (a &= ~(1 << f))
+#define BIT_FLIP(a, f)   (a ^= (1 << f))
 
 uint8_t count = 0;
 //mvwprintw(ctx->win, 10 + count++, 10, "%s [%dx%d]", widget->widget.menu_item.label, x, y);
@@ -64,7 +65,7 @@ static uint8_t p1_layout_widget_menu(ctk_ctx_t* ctx, ctk_widget_t* widget) {
     uint16_t min_height = 0;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
         p1_layout_widget(ctx, &widget->children[i]);
-        widget->children[i].y = min_height;
+        widget->children[i].y = min_height + 1;
         min_height += widget->children[i].height;
         if (widget->children[i].width > min_width) {
             min_width = widget->children[i].width;
@@ -269,28 +270,6 @@ void ctk_addstr(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t brush, cha
     wattroff(widget->win, COLOR_PAIR(brush));
 }
 
-static void init_curses() {
-    setlocale(LC_ALL, "");
-    initscr();
-    if (has_colors()) {
-        start_color();
-        init_pair(CTK_COLOR_WINDOW, COLOR_WHITE, COLOR_BLACK);
-        init_pair(CTK_COLOR_MENU_BAR, COLOR_WHITE, COLOR_BLUE);
-        init_pair(CTK_COLOR_MENU_HOTKEY, COLOR_RED, COLOR_BLUE);
-        init_pair(CTK_COLOR_WARNING, COLOR_YELLOW, COLOR_BLACK);
-        init_pair(CTK_COLOR_HIGHLIGHT, COLOR_MAGENTA, COLOR_BLACK);
-        init_pair(CTK_COLOR_SELECTED, COLOR_BLACK, COLOR_MAGENTA);
-        init_pair(CTK_COLOR_OK, COLOR_GREEN, COLOR_BLACK);
-        init_pair(CTK_COLOR_COOL, COLOR_BLUE, COLOR_BLACK);
-    }
-    keypad(stdscr, TRUE);
-    noecho();
-    cbreak();
-    timeout(1000);
-    curs_set(FALSE);
-    mousemask(ALL_MOUSE_EVENTS, NULL);
-}
-
 static void cleanup() {
 }
 
@@ -309,25 +288,6 @@ static void refresh_view(ctk_ctx_t* ctx) {
     //wrefresh();
 }
 
-static void handle_winch(int sig){
-    signal(SIGWINCH, SIG_IGN);
-    endwin();
-    //resize_view();
-    //refresh_view();
-    signal(SIGWINCH, handle_winch);
-}
-
-static void handle_int(int sig) {
-    cleanup();
-    endwin();
-    exit(0);
-}
-
-static void install_signal_handlers() {
-    signal(SIGINT, handle_int);
-    signal(SIGWINCH, handle_winch);
-}
-
 static void zero_widget(ctk_widget_t* widget) {
     memset(widget, 0, sizeof(ctk_widget_t));
 }
@@ -339,9 +299,11 @@ void ctk_deactivate_all(ctk_widget_t* widget) {
 }
 
 static uint8_t default_menu_handler(ctk_event_t* event, void* user_data) {
-    mvwprintw(event->widget->win, 10, 10, "click");
+    uint8_t active = BIT_TEST(event->widget->flags, CTK_FLAG_ACTIVE);
     ctk_deactivate_all(event->widget->parent);
-    BIT_SET(event->widget->flags, CTK_FLAG_ACTIVE);
+    if (!active) {
+        BIT_SET(event->widget->flags, CTK_FLAG_ACTIVE);
+    }
     event->ctx->redraw = 1;
     return 1;
 }
@@ -489,6 +451,47 @@ uint8_t ctk_init_ctx(ctk_ctx_t* ctx, WINDOW* target) {
     wbkgd(ctx->win, COLOR_PAIR(CTK_COLOR_WINDOW));
     ctx->redraw = 1;
     return 1;
+}
+
+static void init_curses() {
+    setlocale(LC_ALL, "");
+    initscr();
+    if (has_colors()) {
+        start_color();
+        init_pair(CTK_COLOR_WINDOW, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CTK_COLOR_MENU_BAR, COLOR_WHITE, COLOR_BLUE);
+        init_pair(CTK_COLOR_MENU_HOTKEY, COLOR_RED, COLOR_BLUE);
+        init_pair(CTK_COLOR_WARNING, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(CTK_COLOR_HIGHLIGHT, COLOR_MAGENTA, COLOR_BLACK);
+        init_pair(CTK_COLOR_SELECTED, COLOR_BLACK, COLOR_MAGENTA);
+        init_pair(CTK_COLOR_OK, COLOR_GREEN, COLOR_BLACK);
+        init_pair(CTK_COLOR_COOL, COLOR_BLUE, COLOR_BLACK);
+    }
+    keypad(stdscr, TRUE);
+    noecho();
+    cbreak();
+    timeout(500);
+    curs_set(FALSE);
+    mousemask(ALL_MOUSE_EVENTS, NULL);
+}
+
+static void handle_winch(int sig){
+    signal(SIGWINCH, SIG_IGN);
+    endwin();
+    //resize_view();
+    //refresh_view();
+    signal(SIGWINCH, handle_winch);
+}
+
+static void handle_int(int sig) {
+    cleanup();
+    endwin();
+    exit(0);
+}
+
+static void install_signal_handlers() {
+    signal(SIGINT, handle_int);
+    signal(SIGWINCH, handle_winch);
 }
 
 uint8_t ctk_init_curses() {
