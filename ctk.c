@@ -160,11 +160,14 @@ static uint8_t p2_expand_widget_y(ctk_ctx_t* ctx, ctk_widget_t* widget) {
     }
     uint16_t diff = height - child_height;
     uint16_t space_per_child = diff / nr_expandable;
+    uint16_t ymove = 0;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
+        widget->children[i].y = ymove;
         if (BIT_TEST(widget->children[i].flags, CTK_FLAG_EXPAND_Y)) {
             widget->children[i].height += space_per_child;
             p2_expand_widget(ctx, &widget->children[i]);
         }
+        ymove += widget->children[i].height;
     }
 
     return 1;
@@ -239,20 +242,31 @@ static uint8_t draw_widget_default(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_
 }
 
 uint8_t ctk_draw_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y) {
+    uint8_t status = 0;
     switch (widget->type) {
         case CTK_WIDGET_MENU:
-            return draw_widget_menu(ctx, widget, x, y);
+            status = draw_widget_menu(ctx, widget, x, y);
             break;
         case CTK_WIDGET_MENU_ITEM:
-            return draw_widget_menu_item(ctx, widget, x, y);
+            status = draw_widget_menu_item(ctx, widget, x, y);
             break;
         case CTK_WIDGET_MENU_BAR:
-            return draw_widget_menu_bar(ctx, widget, x, y);
+            status = draw_widget_menu_bar(ctx, widget, x, y);
             break;
         default:
-            return draw_widget_default(ctx, widget, x, y);
+            status = draw_widget_default(ctx, widget, x, y);
             break;
     }
+    if (widget->event_callback) {
+        ctk_event_t event;
+        event.x = widget->x;
+        event.y = widget->y;
+        event.type = CTK_EVENT_DRAW;
+        event.ctx = ctx;
+        event.widget = widget;
+        status = widget->event_callback(&event, widget->user_data);
+    }
+    return status;
 }
 
 static void add_abs_widget_pos(ctk_widget_t* widget, uint16_t* xp, uint16_t* yp) {
@@ -268,6 +282,15 @@ void ctk_addstr(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t brush, cha
     wattron(widget->win, COLOR_PAIR(brush));
     mvwaddstr(widget->win, y, x, string);
     wattroff(widget->win, COLOR_PAIR(brush));
+}
+
+void ctk_printf(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t brush, const char *format, ...) {
+    add_abs_widget_pos(widget, &x, &y);
+    va_list arg;
+    va_start(arg, format);
+    wmove(widget->win, y, x);
+    vwprintw(widget->win, format, arg);
+    va_end(arg);
 }
 
 static void cleanup() {
@@ -396,12 +419,26 @@ uint8_t ctk_hbox_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_
     return 1;
 }
 
-static uint8_t handle_event_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t px, uint16_t py, uint16_t x, uint16_t y) {
+uint8_t ctk_vbox_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children) {
+    zero_widget(widget);
+    widget->type = CTK_WIDGET_VBOX;
+    BIT_UNSET(widget->flags, CTK_FLAG_VISIBLE);
+    BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
+    BIT_SET(widget->flags, CTK_FLAG_EXPAND_Y);
+    widget->nr_children = nr_children;
+    widget->children = children;
+    for (uint16_t i = 0; i < widget->nr_children; i++) {
+        widget->children[i].parent = widget;
+    }
+    return 1;
+}
+
+static uint8_t handle_event_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t px, uint16_t py, uint16_t x, uint16_t y, ctk_event_type_t type) {
     px += widget->x;
     py += widget->y;
     uint8_t handled = 0;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
-        handled = handle_event_widget(ctx, &widget->children[i], px, py, x, y);
+        handled = handle_event_widget(ctx, &widget->children[i], px, py, x, y, type);
         if (handled) {
             break;
         }
@@ -414,7 +451,7 @@ static uint8_t handle_event_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_
             ctk_event_t event;
             event.x = px - x;
             event.y = py - y;
-            event.type = 1;
+            event.type = type;
             event.ctx = ctx;
             event.widget = widget;
             return widget->event_callback(&event, widget->user_data);
@@ -423,8 +460,8 @@ static uint8_t handle_event_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_
     return 0;
 }
 
-static void handle_event(ctk_ctx_t* ctx, uint16_t x, uint16_t y) {
-    handle_event_widget(ctx, &ctx->mainwin, 0, 0, x, y);
+static void handle_event(ctk_ctx_t* ctx, uint16_t x, uint16_t y, ctk_event_type_t type) {
+    handle_event_widget(ctx, &ctx->mainwin, 0, 0, x, y, type);
 }
 
 static void trigger_hotkey(ctk_ctx_t* ctx, ctk_widget_t* widget, char hotkey) {
@@ -523,7 +560,7 @@ uint8_t ctk_main_loop(ctk_ctx_t* ctx) {
                 break;
             case KEY_MOUSE:
                 if (getmouse(&event) == OK) {
-                    handle_event(ctx, event.x, event.y);
+                    handle_event(ctx, event.x, event.y, CTK_EVENT_MOUSE);
                 }
                 break;
             default:

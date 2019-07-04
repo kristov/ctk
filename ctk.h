@@ -17,6 +17,11 @@
 #define CTK_COLOR_COOL 0x08
 
 typedef enum {
+    CTK_EVENT_DRAW = 1,
+    CTK_EVENT_MOUSE = 2
+} ctk_event_type_t;
+
+typedef enum {
     CTK_WIDGET_VOID = 1,
     CTK_WIDGET_HBOX = 2,
     CTK_WIDGET_VBOX = 3,
@@ -65,12 +70,14 @@ typedef struct {
 typedef struct ctk_event {
     ctk_ctx_t* ctx;
     ctk_widget_t* widget;
-    uint8_t type;
+    ctk_event_type_t type;
     uint16_t x;
     uint16_t y;
 } ctk_event_t;
 
 void ctk_addstr(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t color, char* string);
+
+void ctk_printf(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t brush, const char *format, ...);
 
 uint8_t ctk_menu_item_init(ctk_widget_t* widget, char hotkey, char* label);
 
@@ -83,6 +90,8 @@ uint8_t ctk_window_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t n
 uint8_t ctk_void_init(ctk_widget_t* widget, uint16_t width, uint16_t height);
 
 uint8_t ctk_hbox_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
+
+uint8_t ctk_vbox_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
 
 uint8_t ctk_realize_widget(ctk_ctx_t* ctx, ctk_widget_t* widget);
 
