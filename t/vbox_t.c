@@ -21,9 +21,8 @@ uint8_t draw_win_l(ctk_event_t* event, void* user_data) {
     }
     char* str = (char*)user_data;
     ctk_widget_t* widget = event->widget;
-//ctk_printf(widget, 0, c++, 1, "%s [%dx%d] at [%dx%d]", str, widget->width, widget->height, widget->x, widget->y);
-    for (uint16_t y = 0; y < widget->width; y++) {
-        for (uint16_t x = 0; x < widget->height; x++) {
+    for (uint16_t y = 0; y < widget->height; y++) {
+        for (uint16_t x = 0; x < widget->width; x++) {
             ctk_addstr(widget, x, y, 1, str);
         }
     }

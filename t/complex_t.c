@@ -34,26 +34,34 @@ uint8_t draw_win_l(ctk_event_t* event, void* user_data) {
 
 int main(int argc, char** argv) {
     ctk_ctx_t ctx;
-    ctk_widget_t widgets[7];
+    ctk_widget_t top_right_hbox_contents[2];
+    ctk_widget_t top_right_hbox_and_rb[2];
 
-    ctk_init_area(&widgets[AREA_RL], 10, 10, 1, 1);
-    ctk_init_area(&widgets[AREA_RR], 10, 10, 1, 1);
-    ctk_init_hbox(&widgets[RIGHT_HBOX], &widgets[AREA_RL], 2);
-    ctk_init_area(&widgets[AREA_RB], 20, 1, 1, 0);
-    ctk_init_vbox(&widgets[RIGHT_VBOX], &widgets[RIGHT_HBOX], 2);
-    ctk_init_area(&widgets[AREA_L], 20, 20, 1, 1);
-    ctk_init_hbox(&widgets[MAIN_HBOX], &widgets[AREA_L], 2);
+    ctk_init_area(&top_right_hbox_contents[0], 10, 10, 1, 1);
+    ctk_init_area(&top_right_hbox_contents[1], 10, 10, 1, 1);
+    ctk_init_hbox(&top_right_hbox_and_rb[0], &top_right_hbox_contents[0], 2);
+    ctk_init_area(&top_right_hbox_and_rb[1], 10, 1, 1, 0);
 
-    widgets[AREA_L].event_callback = draw_win_l;
-    widgets[AREA_L].user_data = "l";
+    ctk_widget_t left_area_and_right_vbox[2];
+    ctk_init_area(&left_area_and_right_vbox[0], 10, 10, 1, 1);
+    ctk_init_vbox(&left_area_and_right_vbox[1], &top_right_hbox_and_rb[0], 2);
 
-    widgets[AREA_RL].event_callback = draw_win_l;
-    widgets[AREA_RL].user_data = "x";
+    ctk_widget_t main_hbox;
+    ctk_init_hbox(&main_hbox, &left_area_and_right_vbox[0], 2);
 
-    widgets[AREA_RB].event_callback = draw_win_l;
-    widgets[AREA_RB].user_data = ".";
+    top_right_hbox_contents[0].event_callback = draw_win_l;
+    top_right_hbox_contents[0].user_data = "l";
 
-    ctk_init(&ctx, &widgets[MAIN_HBOX], 1);
+    top_right_hbox_contents[1].event_callback = draw_win_l;
+    top_right_hbox_contents[1].user_data = "r";
+
+    top_right_hbox_and_rb[1].event_callback = draw_win_l;
+    top_right_hbox_and_rb[1].user_data = "b";
+
+    left_area_and_right_vbox[0].event_callback = draw_win_l;
+    left_area_and_right_vbox[0].user_data = ".";
+
+    ctk_init(&ctx, &main_hbox, 1);
     ctk_main_loop(&ctx);
     ctk_end(&ctx);
 

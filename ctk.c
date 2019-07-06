@@ -15,7 +15,10 @@ uint8_t count = 0;
 
 static uint8_t p1_layout_widget(ctk_ctx_t* ctx, ctk_widget_t* widget);
 
-static uint8_t p1_layout_widget_area(ctk_ctx_t* ctx, ctk_widget_t* widget) {
+static uint8_t p1_layout_widget_noop(ctk_ctx_t* ctx, ctk_widget_t* widget) {
+    for (uint16_t i = 0; i < widget->nr_children; i++) {
+        p1_layout_widget(ctx, &widget->children[i]);
+    }
     return 1;
 }
 
@@ -85,7 +88,7 @@ static uint8_t p1_layout_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
     widget->win = ctx->win;
     switch (widget->type) {
         case CTK_WIDGET_AREA:
-            return p1_layout_widget_area(ctx, widget);
+            return p1_layout_widget_noop(ctx, widget);
             break;
         case CTK_WIDGET_HBOX:
             return p1_layout_widget_hbox(ctx, widget, 0);
@@ -94,7 +97,7 @@ static uint8_t p1_layout_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
             return p1_layout_widget_vbox(ctx, widget);
             break;
         case CTK_WIDGET_WINDOW:
-            return p1_layout_widget_vbox(ctx, widget);
+            return p1_layout_widget_noop(ctx, widget);
             break;
         case CTK_WIDGET_MENU_BAR:
             return p1_layout_widget_hbox(ctx, widget, 1);
@@ -301,7 +304,7 @@ static void cleanup() {
 //}
 
 static void refresh_view(ctk_ctx_t* ctx) {
-    wclear(ctx->win);
+    //wclear(ctx->win);
     ctk_draw_widget(ctx, &ctx->mainwin, 0, 0);
     refresh();
     wrefresh(ctx->win);
@@ -384,8 +387,8 @@ uint8_t ctk_init_window(ctk_widget_t* widget, uint16_t x, uint16_t y, uint16_t w
     zero_widget(widget);
     widget->type = CTK_WIDGET_WINDOW;
     BIT_SET(widget->flags, CTK_FLAG_VISIBLE);
-    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_X);
-    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_Y);
+    BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
+    BIT_SET(widget->flags, CTK_FLAG_EXPAND_Y);
     widget->x = x;
     widget->y = y;
     widget->width = width;
