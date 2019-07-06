@@ -1,16 +1,16 @@
 #include "../ctk.h"
 
-#define WIN_T 0
-#define WIN_B 1
+#define AREA_T 0
+#define AREA_B 1
 #define VBOX 2
 
 // +--------------+
 // |              |
-// |   WIN_T      |
+// |   AREA_T     |
 // |              |
 // +--------------+
 // |              |
-// |   WIN_B      +
+// |   AREA_B     +
 // |              |
 // +--------------+
 
@@ -34,15 +34,15 @@ int main(int argc, char** argv) {
     ctk_ctx_t ctx;
     ctk_widget_t widgets[3];
 
-    ctk_window_init(&widgets[WIN_T], NULL, 0);
-    ctk_window_init(&widgets[WIN_B], NULL, 0);
-    ctk_vbox_init(&widgets[VBOX], &widgets[WIN_T], 2);
+    ctk_init_area(&widgets[AREA_T], 5, 5, 1, 1);
+    ctk_init_area(&widgets[AREA_B], 5, 5, 1, 1);
+    ctk_init_vbox(&widgets[VBOX], &widgets[AREA_T], 2);
 
-    widgets[WIN_T].event_callback = draw_win_l;
-    widgets[WIN_T].user_data = "T";
+    widgets[AREA_T].event_callback = draw_win_l;
+    widgets[AREA_T].user_data = "T";
 
-    widgets[WIN_B].event_callback = draw_win_l;
-    widgets[WIN_B].user_data = "B";
+    widgets[AREA_B].event_callback = draw_win_l;
+    widgets[AREA_B].user_data = "B";
 
     ctk_init(&ctx, &widgets[VBOX], 1);
     ctk_main_loop(&ctx);

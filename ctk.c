@@ -15,7 +15,7 @@ uint8_t count = 0;
 
 static uint8_t p1_layout_widget(ctk_ctx_t* ctx, ctk_widget_t* widget);
 
-static uint8_t p1_layout_widget_void(ctk_ctx_t* ctx, ctk_widget_t* widget) {
+static uint8_t p1_layout_widget_area(ctk_ctx_t* ctx, ctk_widget_t* widget) {
     return 1;
 }
 
@@ -84,8 +84,8 @@ static uint8_t p1_layout_widget_menu_item(ctk_ctx_t* ctx, ctk_widget_t* widget) 
 static uint8_t p1_layout_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
     widget->win = ctx->win;
     switch (widget->type) {
-        case CTK_WIDGET_VOID:
-            return p1_layout_widget_void(ctx, widget);
+        case CTK_WIDGET_AREA:
+            return p1_layout_widget_area(ctx, widget);
             break;
         case CTK_WIDGET_HBOX:
             return p1_layout_widget_hbox(ctx, widget, 0);
@@ -331,7 +331,7 @@ static uint8_t default_menu_handler(ctk_event_t* event, void* user_data) {
     return 1;
 }
 
-uint8_t ctk_menu_item_init(ctk_widget_t* widget, char hotkey, char* label) {
+uint8_t ctk_init_menu_item(ctk_widget_t* widget, char hotkey, char* label) {
     zero_widget(widget);
     BIT_UNSET(widget->flags, CTK_FLAG_ACTIVE);
     BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
@@ -344,7 +344,7 @@ uint8_t ctk_menu_item_init(ctk_widget_t* widget, char hotkey, char* label) {
     return 1;
 }
 
-uint8_t ctk_menu_init(ctk_widget_t* widget, char hotkey, char* label, ctk_widget_t* menu_items, uint16_t nr_menu_items) {
+uint8_t ctk_init_menu(ctk_widget_t* widget, char hotkey, char* label, ctk_widget_t* menu_items, uint16_t nr_menu_items) {
     zero_widget(widget);
     BIT_SET(widget->flags, CTK_FLAG_VISIBLE);
     BIT_UNSET(widget->flags, CTK_FLAG_ACTIVE);
@@ -364,7 +364,7 @@ uint8_t ctk_menu_init(ctk_widget_t* widget, char hotkey, char* label, ctk_widget
     return 1;
 }
 
-uint8_t ctk_menu_bar_init(ctk_widget_t* widget, ctk_widget_t* menus, uint16_t nr_menus) {
+uint8_t ctk_init_menu_bar(ctk_widget_t* widget, ctk_widget_t* menus, uint16_t nr_menus) {
     zero_widget(widget);
     BIT_SET(widget->flags, CTK_FLAG_VISIBLE);
     BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
@@ -380,12 +380,16 @@ uint8_t ctk_menu_bar_init(ctk_widget_t* widget, ctk_widget_t* menus, uint16_t nr
     return 1;
 }
 
-uint8_t ctk_window_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children) {
+uint8_t ctk_init_window(ctk_widget_t* widget, uint16_t x, uint16_t y, uint16_t width, uint16_t height, ctk_widget_t* children, uint16_t nr_children) {
     zero_widget(widget);
     widget->type = CTK_WIDGET_WINDOW;
     BIT_SET(widget->flags, CTK_FLAG_VISIBLE);
-    BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
-    BIT_SET(widget->flags, CTK_FLAG_EXPAND_Y);
+    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_X);
+    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_Y);
+    widget->x = x;
+    widget->y = y;
+    widget->width = width;
+    widget->height = height;
     widget->nr_children = nr_children;
     widget->children = children;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
@@ -394,18 +398,22 @@ uint8_t ctk_window_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t n
     return 1;
 }
 
-uint8_t ctk_void_init(ctk_widget_t* widget, uint16_t width, uint16_t height) {
+uint8_t ctk_init_area(ctk_widget_t* widget, uint16_t width, uint16_t height, uint8_t expand_x, uint8_t expand_y) {
     zero_widget(widget);
-    widget->type = CTK_WIDGET_VOID;
+    widget->type = CTK_WIDGET_AREA;
     BIT_UNSET(widget->flags, CTK_FLAG_VISIBLE);
-    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_X);
-    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_Y);
+    if (expand_x) {
+        BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
+    }
+    if (expand_y) {
+        BIT_SET(widget->flags, CTK_FLAG_EXPAND_Y);
+    }
     widget->width = width;
     widget->height = height;
     return 1;
 }
 
-uint8_t ctk_hbox_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children) {
+uint8_t ctk_init_hbox(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children) {
     zero_widget(widget);
     widget->type = CTK_WIDGET_HBOX;
     BIT_UNSET(widget->flags, CTK_FLAG_VISIBLE);
@@ -419,7 +427,7 @@ uint8_t ctk_hbox_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_
     return 1;
 }
 
-uint8_t ctk_vbox_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children) {
+uint8_t ctk_init_vbox(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children) {
     zero_widget(widget);
     widget->type = CTK_WIDGET_VBOX;
     BIT_UNSET(widget->flags, CTK_FLAG_VISIBLE);
@@ -475,10 +483,8 @@ static void trigger_hotkey(ctk_ctx_t* ctx, ctk_widget_t* widget, char hotkey) {
 uint8_t ctk_init_widgets(ctk_ctx_t* ctx, ctk_widget_t* widgets, uint16_t nr_widgets) {
     int x, y;
     getmaxyx(ctx->win, y, x);
-    ctk_window_init(&ctx->mainwin, widgets, nr_widgets);
+    ctk_init_window(&ctx->mainwin, 0, 0, x, y, widgets, nr_widgets);
     p1_layout_widget(ctx, &ctx->mainwin);
-    ctx->mainwin.width = x;
-    ctx->mainwin.height = y;
     p2_expand_widget(ctx, &ctx->mainwin);
     return 1;
 }

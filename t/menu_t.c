@@ -9,19 +9,19 @@ int main(int argc, char** argv) {
 
     ctk_widget_t menu_bar;
 
-    ctk_menu_item_init(&file_menu_items[0], 'L', "Load ROM");
-    ctk_menu_item_init(&file_menu_items[1], 'Q', "Quit");
+    ctk_init_menu_item(&file_menu_items[0], 'L', "Load ROM");
+    ctk_init_menu_item(&file_menu_items[1], 'Q', "Quit");
 
-    ctk_menu_item_init(&view_menu_items[0], 'R', "ROM view");
-    ctk_menu_item_init(&view_menu_items[1], 'M', "Memory view");
+    ctk_init_menu_item(&view_menu_items[0], 'R', "ROM view");
+    ctk_init_menu_item(&view_menu_items[1], 'M', "Memory view");
 
-    ctk_menu_item_init(&help_menu_items[0], 'L', "Load ROM");
-    ctk_menu_item_init(&help_menu_items[1], 0, "About");
+    ctk_init_menu_item(&help_menu_items[0], 'L', "Load ROM");
+    ctk_init_menu_item(&help_menu_items[1], 0, "About");
 
-    ctk_menu_init(&menus[0], 'F', "File", &file_menu_items[0], 2);
-    ctk_menu_init(&menus[1], 'V', "View", &view_menu_items[0], 2);
-    ctk_menu_init(&menus[2], 'H', "Help", &help_menu_items[0], 2);
-    ctk_menu_bar_init(&menu_bar, &menus[0], 3);
+    ctk_init_menu(&menus[0], 'F', "File", &file_menu_items[0], 2);
+    ctk_init_menu(&menus[1], 'V', "View", &view_menu_items[0], 2);
+    ctk_init_menu(&menus[2], 'H', "Help", &help_menu_items[0], 2);
+    ctk_init_menu_bar(&menu_bar, &menus[0], 3);
 
     ctk_init(&ctx, &menu_bar, 1);
     ctk_main_loop(&ctx);

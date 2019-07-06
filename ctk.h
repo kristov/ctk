@@ -22,7 +22,7 @@ typedef enum {
 } ctk_event_type_t;
 
 typedef enum {
-    CTK_WIDGET_VOID = 1,
+    CTK_WIDGET_AREA = 1,
     CTK_WIDGET_HBOX = 2,
     CTK_WIDGET_VBOX = 3,
     CTK_WIDGET_WINDOW = 4,
@@ -79,19 +79,19 @@ void ctk_addstr(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t color, cha
 
 void ctk_printf(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t brush, const char *format, ...);
 
-uint8_t ctk_menu_item_init(ctk_widget_t* widget, char hotkey, char* label);
+uint8_t ctk_init_menu_item(ctk_widget_t* widget, char hotkey, char* label);
 
-uint8_t ctk_menu_init(ctk_widget_t* widget, char hotkey, char* label, ctk_widget_t* menu_items, uint16_t nr_menu_items);
+uint8_t ctk_init_menu(ctk_widget_t* widget, char hotkey, char* label, ctk_widget_t* menu_items, uint16_t nr_menu_items);
 
-uint8_t ctk_menu_bar_init(ctk_widget_t* widget, ctk_widget_t* menus, uint16_t nr_menus);
+uint8_t ctk_init_menu_bar(ctk_widget_t* widget, ctk_widget_t* menus, uint16_t nr_menus);
 
-uint8_t ctk_window_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
+uint8_t ctk_init_window(ctk_widget_t* widget, uint16_t x, uint16_t y, uint16_t width, uint16_t height, ctk_widget_t* children, uint16_t nr_children);
 
-uint8_t ctk_void_init(ctk_widget_t* widget, uint16_t width, uint16_t height);
+uint8_t ctk_init_area(ctk_widget_t* widget, uint16_t width, uint16_t height, uint8_t expand_x, uint8_t expand_y);
 
-uint8_t ctk_hbox_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
+uint8_t ctk_init_hbox(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
 
-uint8_t ctk_vbox_init(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
+uint8_t ctk_init_vbox(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
 
 uint8_t ctk_realize_widget(ctk_ctx_t* ctx, ctk_widget_t* widget);
 

@@ -6,12 +6,12 @@ int main(int argc, char** argv) {
     ctk_widget_t menu;
     ctk_widget_t widgets[3];
 
-    ctk_menu_init(&menu, 'T', "There should be 10 spaces on either side of this menu", NULL, 0);
-    ctk_void_init(&widgets[0], 10, 10);
-    ctk_menu_bar_init(&widgets[1], &menu, 1);
-    ctk_void_init(&widgets[2], 10, 10);
+    ctk_init_menu(&menu, 'T', "There should be 10 spaces on either side of this menu", NULL, 0);
+    ctk_init_area(&widgets[0], 10, 10, 0, 0);
+    ctk_init_menu_bar(&widgets[1], &menu, 1);
+    ctk_init_area(&widgets[2], 10, 10, 0, 0);
 
-    ctk_hbox_init(&hbox, &widgets[0], 3);
+    ctk_init_hbox(&hbox, &widgets[0], 3);
 
     ctk_init(&ctx, &hbox, 1);
     ctk_main_loop(&ctx);
