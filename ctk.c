@@ -117,7 +117,14 @@ static uint8_t p1_layout_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
 
 static uint8_t p2_expand_widget(ctk_ctx_t* ctx, ctk_widget_t* widget);
 
-static uint8_t p2_expand_widget_x(ctk_ctx_t* ctx, ctk_widget_t* widget) {
+static uint8_t p2_expand_widget_noop(ctk_ctx_t* ctx, ctk_widget_t* widget) {
+    for (uint16_t i = 0; i < widget->nr_children; i++) {
+        p2_expand_widget(ctx, &widget->children[i]);
+    }
+    return 1;
+}
+
+static uint8_t p2_expand_widget_hbox(ctk_ctx_t* ctx, ctk_widget_t* widget) {
     uint16_t width = widget->width;
     uint16_t child_width = 0;
     uint16_t nr_expandable = 0;
@@ -127,25 +134,33 @@ static uint8_t p2_expand_widget_x(ctk_ctx_t* ctx, ctk_widget_t* widget) {
             nr_expandable++;
         }
     }
-    if (nr_expandable == 0) {
-        return 1;
-    }
-    if (width <= child_width) {
-        return 1;
-    }
     uint16_t diff = width - child_width;
-    uint16_t space_per_child = diff / nr_expandable;
+    uint16_t space_per_child = 0;
+    if (nr_expandable > 0) {
+        space_per_child = diff / nr_expandable;
+    }
+    uint16_t xmove = 0;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
+        uint8_t recalc_child = 0;
+        widget->children[i].x = xmove;
         if (BIT_TEST(widget->children[i].flags, CTK_FLAG_EXPAND_X)) {
             widget->children[i].width += space_per_child;
+            recalc_child = 1;
+        }
+        if (BIT_TEST(widget->children[i].flags, CTK_FLAG_EXPAND_Y)) {
+            widget->children[i].height = widget->height;
+            recalc_child = 1;
+        }
+        if (recalc_child) {
             p2_expand_widget(ctx, &widget->children[i]);
         }
+        xmove += widget->children[i].width;
     }
 
     return 1;
 }
 
-static uint8_t p2_expand_widget_y(ctk_ctx_t* ctx, ctk_widget_t* widget) {
+static uint8_t p2_expand_widget_vbox(ctk_ctx_t* ctx, ctk_widget_t* widget) {
     uint16_t height = widget->height;
     uint16_t child_height = 0;
     uint16_t nr_expandable = 0;
@@ -155,19 +170,24 @@ static uint8_t p2_expand_widget_y(ctk_ctx_t* ctx, ctk_widget_t* widget) {
             nr_expandable++;
         }
     }
-    if (nr_expandable == 0) {
-        return 1;
-    }
-    if (height <= child_height) {
-        return 1;
-    }
     uint16_t diff = height - child_height;
-    uint16_t space_per_child = diff / nr_expandable;
+    uint16_t space_per_child = 0;
+    if (nr_expandable > 0) {
+        space_per_child = diff / nr_expandable;
+    }
     uint16_t ymove = 0;
     for (uint16_t i = 0; i < widget->nr_children; i++) {
+        uint8_t recalc_child = 0;
         widget->children[i].y = ymove;
         if (BIT_TEST(widget->children[i].flags, CTK_FLAG_EXPAND_Y)) {
             widget->children[i].height += space_per_child;
+            recalc_child = 1;
+        }
+        if (BIT_TEST(widget->children[i].flags, CTK_FLAG_EXPAND_X)) {
+            widget->children[i].width = widget->width;
+            recalc_child = 1;
+        }
+        if (recalc_child) {
             p2_expand_widget(ctx, &widget->children[i]);
         }
         ymove += widget->children[i].height;
@@ -177,11 +197,22 @@ static uint8_t p2_expand_widget_y(ctk_ctx_t* ctx, ctk_widget_t* widget) {
 }
 
 static uint8_t p2_expand_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
-    if (BIT_TEST(widget->flags, CTK_FLAG_EXPAND_X)) {
-        p2_expand_widget_x(ctx, widget);
-    }
-    if (BIT_TEST(widget->flags, CTK_FLAG_EXPAND_Y)) {
-        p2_expand_widget_y(ctx, widget);
+    switch (widget->type) {
+        case CTK_WIDGET_HBOX:
+            return p2_expand_widget_hbox(ctx, widget);
+            break;
+        case CTK_WIDGET_VBOX:
+            return p2_expand_widget_vbox(ctx, widget);
+            break;
+        case CTK_WIDGET_WINDOW:
+            return p2_expand_widget_vbox(ctx, widget);
+            break;
+        case CTK_WIDGET_MENU_BAR:
+            return p2_expand_widget_hbox(ctx, widget);
+            break;
+        default:
+            return p2_expand_widget_noop(ctx, widget);
+            break;
     }
     return 0;
 }
@@ -246,6 +277,15 @@ static uint8_t draw_widget_default(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_
 
 uint8_t ctk_draw_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y) {
     uint8_t status = 0;
+    if (widget->event_callback) {
+        ctk_event_t event;
+        event.x = widget->x;
+        event.y = widget->y;
+        event.type = CTK_EVENT_DRAW;
+        event.ctx = ctx;
+        event.widget = widget;
+        status = widget->event_callback(&event, widget->user_data);
+    }
     switch (widget->type) {
         case CTK_WIDGET_MENU:
             status = draw_widget_menu(ctx, widget, x, y);
@@ -259,15 +299,6 @@ uint8_t ctk_draw_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16
         default:
             status = draw_widget_default(ctx, widget, x, y);
             break;
-    }
-    if (widget->event_callback) {
-        ctk_event_t event;
-        event.x = widget->x;
-        event.y = widget->y;
-        event.type = CTK_EVENT_DRAW;
-        event.ctx = ctx;
-        event.widget = widget;
-        status = widget->event_callback(&event, widget->user_data);
     }
     return status;
 }
@@ -387,8 +418,8 @@ uint8_t ctk_init_window(ctk_widget_t* widget, uint16_t x, uint16_t y, uint16_t w
     zero_widget(widget);
     widget->type = CTK_WIDGET_WINDOW;
     BIT_SET(widget->flags, CTK_FLAG_VISIBLE);
-    BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
-    BIT_SET(widget->flags, CTK_FLAG_EXPAND_Y);
+    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_X);
+    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_Y);
     widget->x = x;
     widget->y = y;
     widget->width = width;
