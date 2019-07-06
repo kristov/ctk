@@ -18,7 +18,8 @@
 
 typedef enum {
     CTK_EVENT_DRAW = 1,
-    CTK_EVENT_MOUSE = 2
+    CTK_EVENT_KEY = 2,
+    CTK_EVENT_MOUSE = 3
 } ctk_event_type_t;
 
 typedef enum {
@@ -75,6 +76,7 @@ typedef struct ctk_event {
     ctk_event_type_t type;
     uint16_t x;
     uint16_t y;
+    int key;
 } ctk_event_t;
 
 void ctk_addstr(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t color, char* string);
@@ -98,6 +100,8 @@ uint8_t ctk_init_hbox(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_
 uint8_t ctk_init_vbox(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
 
 uint8_t ctk_realize_widget(ctk_ctx_t* ctx, ctk_widget_t* widget);
+
+void ctk_widget_event_handler(ctk_widget_t* widget, ctk_event_callback_t handler, void* user_data);
 
 uint8_t ctk_draw_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y);
 

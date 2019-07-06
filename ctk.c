@@ -549,6 +549,26 @@ static void handle_event(ctk_ctx_t* ctx, uint16_t x, uint16_t y, ctk_event_type_
     handle_event_widget(ctx, &ctx->mainwin, 0, 0, x, y, type);
 }
 
+static uint8_t handle_event_key(ctk_ctx_t* ctx, int c) {
+    ctk_widget_t* widget = &ctx->mainwin;
+    if (widget->event_callback) {
+        ctk_event_t event;
+        event.x = 0;
+        event.y = 0;
+        event.key = c;
+        event.type = CTK_EVENT_KEY;
+        event.ctx = ctx;
+        event.widget = widget;
+        return widget->event_callback(&event, widget->user_data);
+    }
+    return 0;
+}
+
+void ctk_widget_event_handler(ctk_widget_t* widget, ctk_event_callback_t handler, void* user_data) {
+    widget->event_callback = handler;
+    widget->user_data = user_data;
+}
+
 static void trigger_hotkey(ctk_ctx_t* ctx, ctk_widget_t* widget, char hotkey) {
     if (widget->hotkey == hotkey) {
     }
@@ -648,6 +668,7 @@ uint8_t ctk_main_loop(ctk_ctx_t* ctx) {
                 }
                 break;
             default:
+                handle_event_key(ctx, c);
                 break;
         }
         if (ctx->redraw) {
