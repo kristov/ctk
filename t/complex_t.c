@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
     ctk_init_area(&top_right_hbox_and_rb[1], 10, 1, 1, 0);
 
     ctk_widget_t left_area_and_right_vbox[2];
-    ctk_init_area(&left_area_and_right_vbox[0], 10, 10, 1, 1);
+    ctk_init_area(&left_area_and_right_vbox[0], 30, 10, 0, 1);
     ctk_init_vbox(&left_area_and_right_vbox[1], &top_right_hbox_and_rb[0], 2);
 
     ctk_widget_t main_hbox;

@@ -28,7 +28,9 @@ typedef enum {
     CTK_WIDGET_WINDOW = 4,
     CTK_WIDGET_MENU_BAR = 5,
     CTK_WIDGET_MENU = 6,
-    CTK_WIDGET_MENU_ITEM = 7
+    CTK_WIDGET_MENU_ITEM = 7,
+    CTK_WIDGET_VRULE = 8,
+    CTK_WIDGET_HRULE = 9
 } ctk_widget_type_t;
 
 typedef enum {
@@ -88,6 +90,8 @@ uint8_t ctk_init_menu_bar(ctk_widget_t* widget, ctk_widget_t* menus, uint16_t nr
 uint8_t ctk_init_window(ctk_widget_t* widget, uint16_t x, uint16_t y, uint16_t width, uint16_t height, ctk_widget_t* children, uint16_t nr_children);
 
 uint8_t ctk_init_area(ctk_widget_t* widget, uint16_t width, uint16_t height, uint8_t expand_x, uint8_t expand_y);
+
+uint8_t ctk_init_vrule(ctk_widget_t* widget);
 
 uint8_t ctk_init_hbox(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
 

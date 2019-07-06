@@ -105,6 +105,12 @@ static uint8_t p1_layout_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
         case CTK_WIDGET_MENU:
             return p1_layout_widget_menu(ctx, widget);
             break;
+        case CTK_WIDGET_VRULE:
+            return p1_layout_widget_noop(ctx, widget);
+            break;
+        case CTK_WIDGET_HRULE:
+            return p1_layout_widget_noop(ctx, widget);
+            break;
         case CTK_WIDGET_MENU_ITEM:
             return p1_layout_widget_menu_item(ctx, widget);
             break;
@@ -217,6 +223,28 @@ static uint8_t p2_expand_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
     return 0;
 }
 
+static uint8_t draw_widget_vrule(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y) {
+    x += widget->x;
+    y += widget->y;
+    wattron(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_BAR));
+    for (uint16_t i = 0; i < widget->height; i++) {
+        mvwaddch(ctx->win, y + i, x, ' ');
+    }
+    wattroff(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_BAR));
+    return 1;
+}
+
+static uint8_t draw_widget_hrule(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y) {
+    x += widget->x;
+    y += widget->y;
+    wattron(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_BAR));
+    for (uint16_t i = 0; i < widget->width; i++) {
+        mvwaddch(ctx->win, y, x + i, ' ');
+    }
+    wattroff(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_BAR));
+    return 1;
+}
+
 static uint8_t draw_widget_menu_item(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y) {
     x += widget->x;
     y += widget->y;
@@ -233,6 +261,7 @@ static uint8_t draw_widget_menu_item(ctk_ctx_t* ctx, ctk_widget_t* widget, uint1
         mvwprintw(ctx->win, y, x, "%c", widget->hotkey);
         wattroff(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_HOTKEY));
     }
+    wattroff(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_BAR));
     return 1;
 }
 
@@ -296,6 +325,12 @@ uint8_t ctk_draw_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16
         case CTK_WIDGET_MENU_BAR:
             status = draw_widget_menu_bar(ctx, widget, x, y);
             break;
+        case CTK_WIDGET_VRULE:
+            status = draw_widget_vrule(ctx, widget, x, y);
+            break;
+        case CTK_WIDGET_HRULE:
+            status = draw_widget_hrule(ctx, widget, x, y);
+            break;
         default:
             status = draw_widget_default(ctx, widget, x, y);
             break;
@@ -335,14 +370,10 @@ static void cleanup() {
 //}
 
 static void refresh_view(ctk_ctx_t* ctx) {
-    //wclear(ctx->win);
+    wclear(ctx->win);
     ctk_draw_widget(ctx, &ctx->mainwin, 0, 0);
     refresh();
     wrefresh(ctx->win);
-    //wrefresh();
-    //wrefresh();
-    //wrefresh();
-    //wrefresh();
 }
 
 static void zero_widget(ctk_widget_t* widget) {
@@ -356,6 +387,9 @@ void ctk_deactivate_all(ctk_widget_t* widget) {
 }
 
 static uint8_t default_menu_handler(ctk_event_t* event, void* user_data) {
+    if (event->type != CTK_EVENT_MOUSE) {
+        return 0;
+    }
     uint8_t active = BIT_TEST(event->widget->flags, CTK_FLAG_ACTIVE);
     ctk_deactivate_all(event->widget->parent);
     if (!active) {
@@ -417,7 +451,6 @@ uint8_t ctk_init_menu_bar(ctk_widget_t* widget, ctk_widget_t* menus, uint16_t nr
 uint8_t ctk_init_window(ctk_widget_t* widget, uint16_t x, uint16_t y, uint16_t width, uint16_t height, ctk_widget_t* children, uint16_t nr_children) {
     zero_widget(widget);
     widget->type = CTK_WIDGET_WINDOW;
-    BIT_SET(widget->flags, CTK_FLAG_VISIBLE);
     BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_X);
     BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_Y);
     widget->x = x;
@@ -444,6 +477,16 @@ uint8_t ctk_init_area(ctk_widget_t* widget, uint16_t width, uint16_t height, uin
     }
     widget->width = width;
     widget->height = height;
+    return 1;
+}
+
+uint8_t ctk_init_vrule(ctk_widget_t* widget) {
+    zero_widget(widget);
+    widget->type = CTK_WIDGET_VRULE;
+    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_X);
+    BIT_SET(widget->flags, CTK_FLAG_EXPAND_Y);
+    widget->width = 1;
+    widget->height = 1;
     return 1;
 }
 
@@ -518,6 +561,7 @@ uint8_t ctk_init_widgets(ctk_ctx_t* ctx, ctk_widget_t* widgets, uint16_t nr_widg
     int x, y;
     getmaxyx(ctx->win, y, x);
     ctk_init_window(&ctx->mainwin, 0, 0, x, y, widgets, nr_widgets);
+    BIT_SET(ctx->mainwin.flags, CTK_FLAG_ACTIVE);
     p1_layout_widget(ctx, &ctx->mainwin);
     p2_expand_widget(ctx, &ctx->mainwin);
     return 1;
