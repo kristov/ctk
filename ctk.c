@@ -224,8 +224,6 @@ static uint8_t p2_expand_widget(ctk_ctx_t* ctx, ctk_widget_t* widget) {
 }
 
 static uint8_t draw_widget_vrule(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y) {
-    x += widget->x;
-    y += widget->y;
     wattron(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_BAR));
     for (uint16_t i = 0; i < widget->height; i++) {
         mvwaddch(ctx->win, y + i, x, ' ');
@@ -235,8 +233,6 @@ static uint8_t draw_widget_vrule(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t 
 }
 
 static uint8_t draw_widget_hrule(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y) {
-    x += widget->x;
-    y += widget->y;
     wattron(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_BAR));
     for (uint16_t i = 0; i < widget->width; i++) {
         mvwaddch(ctx->win, y, x + i, ' ');
@@ -246,8 +242,6 @@ static uint8_t draw_widget_hrule(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t 
 }
 
 static uint8_t draw_widget_menu_item(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y) {
-    x += widget->x;
-    y += widget->y;
     wattron(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_BAR));
     uint16_t label_len = strlen(widget->label);
     uint16_t pad_len = widget->width - label_len;
@@ -266,8 +260,6 @@ static uint8_t draw_widget_menu_item(ctk_ctx_t* ctx, ctk_widget_t* widget, uint1
 }
 
 static uint8_t draw_widget_menu(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y) {
-    x += widget->x;
-    y += widget->y;
     wattron(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_BAR));
     mvwprintw(ctx->win, y, x, "%s", widget->label);
     wattroff(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_BAR));
@@ -284,8 +276,6 @@ static uint8_t draw_widget_menu(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x
 }
 
 static uint8_t draw_widget_menu_bar(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y) {
-    x += widget->x;
-    y += widget->y;
     wattron(ctx->win, COLOR_PAIR(CTK_COLOR_MENU_BAR));
     for (uint16_t i = 0; i < widget->width; i++) {
         mvwaddch(ctx->win, y, x + i, ' ');
@@ -305,6 +295,8 @@ static uint8_t draw_widget_default(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_
 }
 
 uint8_t ctk_draw_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y) {
+    x += widget->x;
+    y += widget->y;
     uint8_t status = 0;
     if (widget->event_callback) {
         ctk_event_t event;
@@ -485,6 +477,16 @@ uint8_t ctk_init_vrule(ctk_widget_t* widget) {
     widget->type = CTK_WIDGET_VRULE;
     BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_X);
     BIT_SET(widget->flags, CTK_FLAG_EXPAND_Y);
+    widget->width = 1;
+    widget->height = 1;
+    return 1;
+}
+
+uint8_t ctk_init_hrule(ctk_widget_t* widget) {
+    zero_widget(widget);
+    widget->type = CTK_WIDGET_HRULE;
+    BIT_SET(widget->flags, CTK_FLAG_EXPAND_X);
+    BIT_UNSET(widget->flags, CTK_FLAG_EXPAND_Y);
     widget->width = 1;
     widget->height = 1;
     return 1;

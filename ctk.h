@@ -95,6 +95,8 @@ uint8_t ctk_init_area(ctk_widget_t* widget, uint16_t width, uint16_t height, uin
 
 uint8_t ctk_init_vrule(ctk_widget_t* widget);
 
+uint8_t ctk_init_hrule(ctk_widget_t* widget);
+
 uint8_t ctk_init_hbox(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
 
 uint8_t ctk_init_vbox(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_children);
