@@ -354,6 +354,13 @@ void ctk_printf(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t brush, con
     va_end(arg);
 }
 
+void ctk_addch(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t brush, char c) {
+    add_abs_widget_pos(widget, &x, &y);
+    wattron(widget->win, COLOR_PAIR(brush));
+    mvwaddch(widget->win, y, x, c);
+    wattroff(widget->win, COLOR_PAIR(brush));
+}
+
 static void cleanup() {
 }
 

@@ -83,6 +83,8 @@ void ctk_addstr(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t color, cha
 
 void ctk_printf(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t brush, const char *format, ...);
 
+void ctk_addch(ctk_widget_t* widget, uint16_t x, uint16_t y, uint8_t brush, char c);
+
 uint8_t ctk_init_menu_item(ctk_widget_t* widget, char hotkey, char* label);
 
 uint8_t ctk_init_menu(ctk_widget_t* widget, char hotkey, char* label, ctk_widget_t* menu_items, uint16_t nr_menu_items);
