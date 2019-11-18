@@ -625,7 +625,7 @@ static void init_curses() {
     keypad(stdscr, TRUE);
     noecho();
     cbreak();
-    timeout(500);
+    timeout(50);
     curs_set(FALSE);
     mousemask(ALL_MOUSE_EVENTS, NULL);
 }
