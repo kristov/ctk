@@ -45,7 +45,9 @@ typedef enum {
 
 typedef struct ctk_widget ctk_widget_t;
 typedef struct ctk_event ctk_event_t;
+typedef struct ctk_ctx ctk_ctx_t;
 typedef uint8_t (*ctk_event_callback_t)(ctk_event_t* event, void* user_data);
+typedef uint8_t (*ctk_loop_callback_t)(ctk_ctx_t* ctx, void* user_data);
 
 typedef struct ctk_widget {
     WINDOW* win;
@@ -64,10 +66,12 @@ typedef struct ctk_widget {
     void* user_data;
 } ctk_widget_t;
 
-typedef struct {
+typedef struct ctk_ctx {
     WINDOW* win;
     ctk_widget_t mainwin;
     uint8_t redraw;
+    ctk_loop_callback_t loop_callback;
+    void* user_data;
 } ctk_ctx_t;
 
 typedef struct ctk_event {
@@ -106,6 +110,8 @@ uint8_t ctk_init_vbox(ctk_widget_t* widget, ctk_widget_t* children, uint16_t nr_
 uint8_t ctk_realize_widget(ctk_ctx_t* ctx, ctk_widget_t* widget);
 
 void ctk_widget_event_handler(ctk_widget_t* widget, ctk_event_callback_t handler, void* user_data);
+
+void ctk_loop_callback(ctk_ctx_t* ctx, ctk_loop_callback_t handler, void* user_data);
 
 uint8_t ctk_draw_widget(ctk_ctx_t* ctx, ctk_widget_t* widget, uint16_t x, uint16_t y);
 

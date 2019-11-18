@@ -578,6 +578,11 @@ void ctk_widget_event_handler(ctk_widget_t* widget, ctk_event_callback_t handler
     widget->user_data = user_data;
 }
 
+void ctk_loop_callback(ctk_ctx_t* ctx, ctk_loop_callback_t handler, void* user_data) {
+    ctx->loop_callback = handler;
+    ctx->user_data = user_data;
+}
+
 static void trigger_hotkey(ctk_ctx_t* ctx, ctk_widget_t* widget, char hotkey) {
     if (widget->hotkey == hotkey) {
     }
@@ -679,6 +684,9 @@ uint8_t ctk_main_loop(ctk_ctx_t* ctx) {
             default:
                 handle_event_key(ctx, c);
                 break;
+        }
+        if (ctx->loop_callback) {
+            ctx->loop_callback(ctx, ctx->user_data);
         }
         if (ctx->redraw) {
             refresh_view(ctx);
