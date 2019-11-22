@@ -668,11 +668,9 @@ uint8_t ctk_main_loop(ctk_ctx_t* ctx) {
     refresh_view(ctx);
     while (1) {
         c = getch();
-        //mvwprintw(ctx->win, 10, 10, "%s %d", keyname(c), c);
-        if (ERR == c) {
-            continue;
-        }
         switch (c) {
+            case ERR:
+                break;
             case 6:
                 trigger_hotkey(ctx, &ctx->mainwin, 'F');
                 break;
