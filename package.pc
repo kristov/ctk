@@ -1,0 +1,6 @@
+Name: ctk
+Description: Ncurses layouts
+Version: 0.1.0
+Conflicts:
+Libs: -L${pcfiledir} -l:ctk.a
+Cflags: -I${pcfiledir}

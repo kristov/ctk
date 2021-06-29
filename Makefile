@@ -1,8 +1,16 @@
 CC := gcc
 CFLAGS := -Wall -Werror -ggdb
 
-ctk.o: ctk.c ctk.h
+OBJECTS := ctk.o
+HEADERS := $(OBJECTS:.o=.h)
+
+all: ctk.a
+
+%.o: %.c %.h
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+ctk.a: $(OBJECTS)
+	ar -crs $@ $(OBJECTS)
 
 tests: ctk.o
 	cd t/ && make

@@ -1,3 +1,4 @@
 *.o
+*.a
 test_ctk
 t/*_t
